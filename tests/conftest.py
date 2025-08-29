@@ -1,16 +1,15 @@
-# tests/conftest.py
+# Shared pytest fixtures for a temp DB + test client.
 import os
 import sys
 import tempfile
 import pytest
 
-
 PROJECT_ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from server.app import create_app, db  
-
+from server.app import create_app
+from server.extensions import db  # use the same db instance
 
 @pytest.fixture(scope="session")
 def test_app():
@@ -33,13 +32,9 @@ def test_app():
         if os.path.exists(db_path):
             os.unlink(db_path)
 
-
 @pytest.fixture()
 def client(test_app):
     return test_app.test_client()
-
-
-
 
 @pytest.fixture()
 def signup(client):
@@ -52,7 +47,6 @@ def signup(client):
         )
     return _signup
 
-
 @pytest.fixture()
 def login_resp(client):
     """Return a function that logs in and returns the raw response."""
@@ -64,12 +58,10 @@ def login_resp(client):
         )
     return _login_resp
 
-
 @pytest.fixture()
 def login_token(signup, login_resp):
-    """Return a function that ensures a user exists, logs in, and returns the access token string."""
+    """Ensure user exists, then log in and return the JWT string."""
     def _login_token(username="demo", password="demo123"):
-        
         resp = signup(username, password)
         assert resp.status_code in (201, 409)
         resp = login_resp(username, password)
@@ -77,10 +69,9 @@ def login_token(signup, login_resp):
         return resp.get_json()["access_token"]
     return _login_token
 
-
 @pytest.fixture()
 def auth_headers():
-    """Return a function that builds Authorization headers from a token."""
+    """Build Authorization headers from a token."""
     def _auth_headers(token: str):
         return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     return _auth_headers
