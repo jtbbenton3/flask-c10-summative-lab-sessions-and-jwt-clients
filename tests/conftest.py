@@ -1,4 +1,4 @@
-# Shared pytest fixtures for a temp DB + test client.
+# conftest.py
 import os
 import sys
 import tempfile
@@ -9,7 +9,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from server.app import create_app
-from server.extensions import db  # use the same db instance
+from server.extensions import db  
 
 @pytest.fixture(scope="session")
 def test_app():

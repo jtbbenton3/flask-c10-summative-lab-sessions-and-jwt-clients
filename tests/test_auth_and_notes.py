@@ -1,4 +1,4 @@
-# End-to-end tests for auth + notes.
+# test_auth_notes.py
 def test_health_ok(client):
     r = client.get("/health")
     assert r.status_code == 200
