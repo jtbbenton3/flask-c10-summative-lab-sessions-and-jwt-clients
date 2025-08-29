@@ -1,5 +1,5 @@
 # server/app.py
-from flask import Flask, request, jsonify
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
@@ -31,8 +31,8 @@ def create_app():
     bcrypt.init_app(app)
     jwt.init_app(app)
 
-    # Import models
-    from .models import User
+    # Import models after extensions are ready
+    from .models import User, Note
 
     @app.get("/health")
     def health():
@@ -77,11 +77,35 @@ def create_app():
     @app.get("/me")
     @jwt_required()
     def me():
-        uid = get_jwt_identity()
-        user = User.query.get(int(uid))
+        uid = int(get_jwt_identity())
+        user = User.query.get(uid)
         if not user:
             return {"error": "user not found"}, 404
         return {"id": user.id, "username": user.username}, 200
+
+    # ---- Notes endpoints ----
+
+    @app.post("/notes")
+    @jwt_required()
+    def create_note():
+        data = request.get_json() or {}
+        title = (data.get("title") or "").strip()
+        content = (data.get("content") or "").strip()
+        if not title or not content:
+            return {"error": "title and content are required"}, 400
+
+        uid = int(get_jwt_identity())
+        note = Note(title=title, content=content, user_id=uid)
+        db.session.add(note)
+        db.session.commit()
+        return {"id": note.id, "title": note.title, "content": note.content}, 201
+
+    @app.get("/notes")
+    @jwt_required()
+    def list_notes():
+        uid = int(get_jwt_identity())
+        notes = Note.query.filter_by(user_id=uid).order_by(Note.id.desc()).all()
+        return [{"id": n.id, "title": n.title, "content": n.content} for n in notes], 200
 
     return app
 

@@ -1,9 +1,6 @@
 # server/models.py
 from sqlalchemy import func
-from flask_bcrypt import Bcrypt
-from .app import db
-
-bcrypt = Bcrypt()
+from .app import db, bcrypt  # use the shared db and bcrypt from app
 
 class User(db.Model):
     __tablename__ = "users"
@@ -13,15 +10,15 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
-    
+    # relationship: a user has many notes
     notes = db.relationship(
         "Note",
         backref="user",
         lazy=True,
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
 
-    # password helpers 
+    # password helpers
     def set_password(self, raw_password: str):
         self.password_hash = bcrypt.generate_password_hash(raw_password).decode("utf-8")
 
@@ -40,7 +37,6 @@ class Note(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), server_onupdate=func.now())
 
-    # ownership
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
     def __repr__(self):
