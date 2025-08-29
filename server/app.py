@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify, g
 from flask_migrate import Migrate
 import os
 import datetime
-import jwt  # PyJWT
+import jwt  
 
 from .extensions import db, bcrypt
 from .models import User, Note
@@ -14,7 +14,7 @@ from .models import User, Note
 def create_app(test_config=None):
     app = Flask(__name__)
 
-    # --- Config ---
+    #Config
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///app.db")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret")  # used to sign JWTs
@@ -23,19 +23,19 @@ def create_app(test_config=None):
     if test_config:
         app.config.update(test_config)
 
-    # --- Init extensions ---
+    #Init extensions
     db.init_app(app)
     bcrypt.init_app(app)
     Migrate(app, db)
 
-    # ---------- JWT helpers ----------
+    #JWT helpers
     def encode_token(user_id: int) -> str:
         """Create a JWT access token for the given user id.
         Note: PyJWT 2.x requires 'sub' to be a string.
         """
         now = datetime.datetime.now(datetime.timezone.utc)
         payload = {
-            "sub": str(user_id),  # MUST be string for PyJWT
+            "sub": str(user_id), 
             "iat": int(now.timestamp()),
             "exp": int((now + datetime.timedelta(hours=6)).timestamp()),
         }
@@ -62,7 +62,7 @@ def create_app(test_config=None):
             if not data:
                 return jsonify({"error": "Invalid token"}), 401
             try:
-                uid = int(data.get("sub"))  # cast back to int
+                uid = int(data.get("sub"))  
             except (TypeError, ValueError):
                 return jsonify({"error": "Invalid token subject"}), 401
             user = User.query.get(uid)
@@ -73,7 +73,7 @@ def create_app(test_config=None):
 
         return wrapper
 
-    # ---------- Routes ----------
+    #Routes 
     @app.get("/health")
     def health():
         """Simple liveness endpoint for tests/monitoring."""
@@ -123,7 +123,7 @@ def create_app(test_config=None):
         u = g.current_user
         return jsonify({"id": u.id, "username": u.username}), 200
 
-    # ---- Notes CRUD ----
+    #Notes CRUD
     @app.post("/notes")
     @require_auth
     def create_note():
